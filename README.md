@@ -1,3 +1,4 @@
+
 - [Luckfox-pico-max端侧部署RKNN](#luckfox-pico-max端侧部署rknn)
   - [烧写SDK镜像](#烧写sdk镜像)
     - [开始前注意事项](#开始前注意事项)
@@ -20,6 +21,8 @@
       - [编译环境](#编译环境)
       - [交叉编译](#交叉编译-1)
     - [运行测试](#运行测试)
+  - [自主开发的分类模型进行RKNN部署](#自主开发的分类模型进行rknn部署)
+  - [LVGL示例测试快速使用](#lvgl示例测试快速使用)
 
 
 # Luckfox-pico-max端侧部署RKNN
@@ -42,29 +45,29 @@ luckfoxpico为用户提供了适配 LuckFox Pico 和 LuckFox Pico Mini A 的 SD 
 
 1. 下载和解压烧录工具(戳我下载)。
 2. LuckFox Pico Pro/Max开发板就选择 RV1106。
-3. 擦除 SPI FLASH
-   ![alt text](image.png) 
+3. 擦除 SPI FLASH  
+   ![alt text](./image/image.png) 
 4. LuckFox Pico Mini B/Plus/Pro/Max 在 Windows下载固件库方法:
 ① 按住 BOOT 键后连接电脑后，松开 BOOT 键，瑞芯微刷机工具就会显示 MaskRom 设备。
 ② 加载固件的存放目录，重载 env 文件，勾选所有项。
-③ 点击下载。（注意：下载文件不包括update.img）
-    ![alt text](image-1.png)
+③ 点击下载。（注意：下载文件不包括update.img）  
+    ![alt text](./image/image-1.png)
 
 ## 配置开发板虚拟网卡
 ### 准备工作
 LuckFox Pico 、LuckFox Pico Mini A/B 和 LuckFox Pico Plus/Pro/Max 的 USB 虚拟网卡具有静态 IP 地址为172.32.0.93。在使用之前，需要设置RNDIS虚拟网口。对于 LuckFox Pico Plus/Pro/Max 开发板，使用网口则无需进行配置。
 
-1. Windows 安全中心—>防火墙和网络保护—>关闭防火墙。
-![alt text](image-2.png)
+1. Windows 安全中心—>防火墙和网络保护—>关闭防火墙。    
+![alt text](./image/image-2.png)
 
-2. 配置 RNDIS 网卡的静态IP，打开设置—>高级网络设置—>更改适配器选项。
+2. 配置 RNDIS 网卡的静态IP，打开设置—>高级网络设置—>更改适配器选项。  
 
-3. 网卡一般是类似这样的名字Remote NDIS based nternet Sharing Device，右键属性。
-![alt text](image-3.png)
+3. 网卡一般是类似这样的名字Remote NDIS based nternet Sharing Device，右键属性。  
+![alt text](./image/image-3.png)
 
-4. 双击 internet 协议版本（TCP/IPv4），IPV4地址设置为 172.32.0.100，避免和设备地址冲突。
-![alt text](image-4.png)
-![alt text](image-5.png)
+4. 双击 internet 协议版本（TCP/IPv4），IPV4地址设置为 172.32.0.100，避免和设备地址冲突。  
+![alt text](./image/image-4.png)  
+![alt text](./image/image-5.png)
 
 ## 登录开发板
 
@@ -92,8 +95,8 @@ Luckfox Pico 系列的最新固件默认启用了 SSH。由于 Luckfox Pico 和 
 ssh root@172.32.0.93
 ```
 
-输入密码就可以登录啦！（下面是登录进去的样子）
-![alt text](image-6.png)
+输入密码就可以登录啦！（下面是登录进去的样子）  
+![alt text](./image/image-6.png)
 
 ## RKNN推理测试
 
@@ -137,8 +140,8 @@ python3 export.py --rknpu --weight yolov5s.pt
     ```
     git clone https://github.com/rockchip-linux/rknn-toolkit2
     ```
-    执行这一步你可能会出现以下报错
-    ![alt text](image-13.png)
+    执行这一步你可能会出现以下报错  
+    ![alt text](./image/image-13.png)
     ```
     Cloning into 'rknn-toolkit2'...
     remote: Enumerating objects: 1734, done.
@@ -188,8 +191,8 @@ python3 export.py --rknpu --weight yolov5s.pt
     | 3.10      | requirements_cp310-1.6.0.txt       |
     | 3.11   | requirements_cp311-1.6.0.txt        |
 
-    - 在安装RKNN-ToolKit2依赖包时，你可能出现troch与torchvision版本不匹配的报错，这时不要惊慌，我们安装trouch对应的torchvision版本就可以了
-    ![alt text](image-14.png) 
+    - 在安装RKNN-ToolKit2依赖包时，你可能出现troch与torchvision版本不匹配的报错，这时不要惊慌，我们安装trouch对应的torchvision版本就可以了  
+    ![alt text](./image/image-14.png) 
     解决办法：
         ```
         pip install torchvision==0.14.1
@@ -263,8 +266,8 @@ chmod +x ./build-linux.sh
     ```
     export GCC_COMPILER=~/luckfox-pico/tools/linux/toolchain/...
     ```
-- 编译过程  
-![alt text](image-7.png)
+- 编译过程    
+![alt text](./image/image-7.png)
 
 - 交叉编译完成后在 rknn_model_zoo 目录下会生成一个 install 目录，包含编译出来的程序和库文件。
     ```
@@ -306,3 +309,13 @@ chmod +x ./build-linux.sh
         adb -s 172.32.0.93:5555 pull /root/out.png
         ``` 
         接下来查看就好啦！
+
+## 自主开发的分类模型进行RKNN部署
+
+
+## LVGL示例测试快速使用
+
+这边我是通过幸狐WIKI的LVGL快速使用进行的简单测试，设备树还没有更改，镜像没有自己编译出来，先用官方给的固件，其实为了使用适配屏，我觉得直接使用官方给的固件就可以了，我们学习后面的lvgl的移植就行。  
+其实你要是只是想用的话，直接将官方给我们的压缩包。将lvgl_demo放到调试机上面交叉编译就行  
+我将下载的镜像烧录到板子上，通过scp将demo可执行文件传到开发板里，运行就可以。
+
