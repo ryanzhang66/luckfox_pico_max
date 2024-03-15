@@ -22,7 +22,12 @@
       - [交叉编译](#交叉编译-1)
     - [运行测试](#运行测试)
   - [自主开发的分类模型进行RKNN部署](#自主开发的分类模型进行rknn部署)
+    - [onnx转换rknn](#onnx转换rknn)
   - [LVGL示例测试快速使用](#lvgl示例测试快速使用)
+  - [LVGL(GUI)开发](#lvglgui开发)
+    - [Bar实现](#bar实现)
+    - [Msgbox实现](#msgbox实现)
+    - [整体实现](#整体实现)
 
 
 # Luckfox-pico-max端侧部署RKNN
@@ -312,10 +317,134 @@ chmod +x ./build-linux.sh
 
 ## 自主开发的分类模型进行RKNN部署
 
+这里对于目前我的水平还是很困难，但是我还是想记录一下我是如何部署的，希望可以给你一些参考
+
+### onnx转换rknn
+
+我们利用自己的推理代码已经可以转换好onnx中间模型就可以，重点是如何转换为rknn，我这里以rknn_model_zoo的resnet为转换案例，因为我做的是分类算法。
+
+持续更新中......
 
 ## LVGL示例测试快速使用
 
 这边我是通过幸狐WIKI的LVGL快速使用进行的简单测试，设备树还没有更改，镜像没有自己编译出来，先用官方给的固件，其实为了使用适配屏，我觉得直接使用官方给的固件就可以了，我们学习后面的lvgl的移植就行。  
 其实你要是只是想用的话，直接将官方给我们的压缩包。将lvgl_demo放到调试机上面交叉编译就行  
 我将下载的镜像烧录到板子上，通过scp将demo可执行文件传到开发板里，运行就可以。
+
+## LVGL(GUI)开发
+
+上面我们已经运行了LVGL的demo，同时也将lvgl的开发环境在调试机上搭建好了，下面我们可以愉快的开始开发GUI界面了。
+
+首先我需要实现已给简单的界面开发，在官方原有的基础上我添加了bar（进度条），msgbox（消息弹窗）。
+
+### Bar实现
+- 创建bar
+    ```c
+    lv_obj_t *bar = lv_bar_create(lv_scr_act());            //创建一个进度条控件
+    lv_obj_set_size(bar, 200, 20);                          //设置进度条控件的大小
+    lv_obj_center(bar);                                     //将进度条控件放入到父对象（屏幕）的中心位置
+
+    lv_bar_set_range(bar, 0, 100);                         //设置进度条的设置范围大小
+    ``` 
+- 进度条动态显示
+    ```c
+    lv_obj_set_style_anim_time(bar, 8000, LV_STATE_DEFAULT);
+    lv_bar_set_value(bar, 100, LV_ANIM_ON);
+    ``` 
+    - `lv_bar_set_value(bar, 100, LV_ANIM_ON);`
+      > 功能：设置进度条默认值显示
+      > 参数1：进度条控件指针
+      > 参数2：设置进度条当前的值
+      > 参数3：设置是否带有动画 LV_ANIM_OFF | LV_ANIM_ON
+
+    - `lv_obj_set_style_anim_time(bar, 8000, LV_STATE_DEFAULT);`
+      > 功能：设置动画的时间
+      > 参数1：进度条控件指针
+      > 参数2：设置进度条动画显示的时间
+      > 参数3：默认就行
+- 显示完成后进度条消失
+    ```c
+    lv_obj_del_delayed(bar, 8000);  //(进度条控件指针, 多少时间后消失)
+    ``` 
+
+- 消失完后执行任务
+  - 创建全局指针
+    - `lv_timer_t * lvgl_task1 = NULL;`
+  - 创建消失完后执行任务的逻辑
+    ```c
+    lvgl_task1 = lv_timer_create(lvgl_task1_cb, 8500, 0);      // 运行周期为lvgl的8000个滴答时钟
+    lv_timer_set_repeat_count(lvgl_task1, 1);
+    ``` 
+  - 创建回调函数
+    ```c
+    void lvgl_task1_cb(lv_timer_t * tmr)
+    {
+      lvgl_msgbox_test();  //显示消息弹窗
+    }
+    ``` 
+### Msgbox实现
+
+- 实现函数
+    ```c
+    void lvgl_msgbox_test(void)
+    {
+        static const char* btn_str[] = { "OK", "Cancel"};  //创建按钮数组
+
+        //创建消息显示窗口
+        lv_obj_t* mbox3 = lv_msgbox_create(lv_scr_act(), "Inference results", "Your probability of getting sick is 88.324%", btn_str, true);
+        lv_obj_del_delayed(mbox3, 5000);  //延迟5秒删除窗口
+        lv_obj_center(mbox3);  //将消息窗口显示在屏幕中心
+    }
+    ``` 
+
+### 整体实现
+- 实现效果预览
+   ![alt text](./image/1.gif)
+- 整体代码
+    ```c
+    lv_timer_t * lvgl_task1 = NULL;
+
+    void lvgl_msgbox_test(void)
+    {
+        static const char* btn_str[] = { "OK", "Cancel"};
+
+        lv_obj_t* mbox3 = lv_msgbox_create(lv_scr_act(), "Inference results", "Your probability of getting sick is 88.324%", btn_str, true);
+        lv_obj_del_delayed(mbox3, 5000);
+        lv_obj_center(mbox3);
+
+    }
+
+    void lvgl_task1_cb(lv_timer_t * tmr)
+    {
+        lvgl_msgbox_test(); 
+    }
+
+    void lv_gui_bar_test()
+    {
+        lv_obj_t *bar = lv_bar_create(lv_scr_act());            //创建一个进度条控件
+        lv_obj_set_size(bar, 200, 20);                          //设置进度条控件的大小
+        lv_obj_center(bar);                                     //将进度条控件放入到父对象（屏幕）的中心位置
+
+        lv_bar_set_range(bar, 0, 100);                         //设置进度条的设置范围大小
+
+        /*
+            功能：设置进度条默认值显示
+            参数1：进度条控件指针
+            参数2：设置进度条当前的值
+            参数3：设置是否带有动画 LV_ANIM_OFF | LV_ANIM_ON
+        */
+        lv_obj_set_style_anim_time(bar, 5000, LV_STATE_DEFAULT);
+        lv_bar_set_value(bar, 100, LV_ANIM_ON);
+        lv_obj_del_delayed(bar, 5000);
+
+        lvgl_task1 = lv_timer_create(lvgl_task1_cb, 5500, 0);      // 运行周期为lvgl的5000个滴答时钟
+        lv_timer_set_repeat_count(lvgl_task1, 1);
+
+    }
+
+    int main(void)
+    {
+        lv_gui_bar_test();
+    }
+    ``` 
 
